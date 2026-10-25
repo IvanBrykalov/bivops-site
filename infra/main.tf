@@ -103,8 +103,9 @@ resource "aws_wafv2_web_acl" "site" {
     }
     statement {
       rate_based_statement {
-        aggregate_key_type = "IP"
-        limit              = 1000
+        aggregate_key_type    = "IP"
+        limit                 = 100
+        evaluation_window_sec = 300
       }
     }
     visibility_config {
