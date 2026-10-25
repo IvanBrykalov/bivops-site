@@ -117,9 +117,6 @@ resource "aws_wafv2_web_acl" "site" {
 data "aws_cloudfront_cache_policy" "managed" {
   name = "Managed-CachingOptimized"
 }
-data "aws_cloudfront_response_headers_policy" "security" {
-  name = "Managed-SecurityHeadersPolicy"
-}
 resource "aws_cloudfront_distribution" "site" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -142,7 +139,7 @@ resource "aws_cloudfront_distribution" "site" {
     cached_methods             = ["GET", "HEAD"]
     compress                   = true
     cache_policy_id            = data.aws_cloudfront_cache_policy.managed.id
-    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
   }
   restrictions {
     geo_restriction {

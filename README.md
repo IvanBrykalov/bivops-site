@@ -2,7 +2,7 @@
 
 A static, English-language website with a warm light theme.
 The design is approved. This package includes Terraform and GitHub Actions.
-Nothing has been deployed to AWS and no GitHub repository has been created yet.
+Infrastructure is deployed separately from publishing this repository.
 Read [DEPLOY.md](DEPLOY.md) for the Russian deployment tutorial, costs and checks.
 
 ## Preview
@@ -21,7 +21,7 @@ Open http://localhost:8080.
 Notes and its reference-design disclaimers were removed.
 No implementation or review instructions are shown in public pages.
 All long dashes in HTML, CSS, and JavaScript were replaced with short hyphens.
-The original portrait is displayed using a circular CSS frame.
+A 256 x 256 avatar (dist/assets/me.png) is displayed using a circular CSS frame.
 
 ## Content
 The quiz is a learning exercise, not a professional certification.
@@ -58,7 +58,7 @@ Quiz answers and tool inputs are not saved or transmitted.
 JSON.parse can round large numbers; the interface states this.
 CIDR uses general IPv4 host rules, not AWS-specific reservations.
 Clipboard access depends on the browser and page security context.
-The original photograph is about 2.8 MB. Asset optimization can be added before deployment.
+Only the small avatar belongs in the website source. Keep the full-size portrait outside Git.
 
 ## Deployment source
 - bootstrap/: private versioned S3 bucket for Terraform state.
@@ -73,3 +73,8 @@ Only dist/ is published. No AWS credentials belong in Git. Commit both .terrafor
 Run node --test tests/site.test.js, python3 scripts/check_site.py and python3 -m unittest discover -s tests. Terraform uses version 1.17.0 and AWS provider 6.70.0.
 
 No reuse license has been selected yet. Public visibility alone is not a free-software license, and the portrait is not licensed for reuse by this package.
+
+## Browser security
+CloudFront sets a Content Security Policy through a native response headers policy, with no additional policy usage fee. Scripts, styles and images load only from this site. Inline scripts, network API requests, form submissions and framing are blocked. External documentation links still work.
+
+The policy is defined in infra/security_headers.tf and takes effect after Terraform apply. Adding a third-party script, remote image, form or API requires an explicit policy review. This policy does not protect against an attacker who can replace trusted site files.

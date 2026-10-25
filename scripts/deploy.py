@@ -77,7 +77,7 @@ def main():
     last_error = None
     for attempt in range(12):
         try:
-            for path in ('/', '/skills.html', '/tools.html', '/learn.html', '/about.html', '/quiz.js', '/assets/ivan.png'):
+            for path in ('/', '/skills.html', '/tools.html', '/learn.html', '/about.html', '/quiz.js', '/assets/me.png'):
                 request = urllib.request.Request('https://bivops.com' + path, method='HEAD')
                 with urllib.request.urlopen(request, timeout=15) as response:
                     if response.status != 200:
