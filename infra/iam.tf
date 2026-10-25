@@ -17,7 +17,7 @@ resource "aws_iam_role" "deploy" {
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = { StringEquals = {
         "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-        "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:ref:refs/heads/main"
+        "token.actions.githubusercontent.com:sub" = "repo:IvanBrykalov@61802438/bivops-site@1433334104:ref:refs/heads/main"
       } }
     }]
   })
