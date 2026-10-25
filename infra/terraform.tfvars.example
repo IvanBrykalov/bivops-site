@@ -1,0 +1,5 @@
+free_plan_eligibility_confirmed = false
+hosted_zone_id    = "REPLACE_WITH_EXISTING_ZONE_ID"
+github_repository = "YOUR_GITHUB_USERNAME/bivops-site"
+# Set this only if this AWS account already has the GitHub OIDC provider:
+# existing_github_oidc_provider_arn = "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"

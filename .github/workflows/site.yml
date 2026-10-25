@@ -1,0 +1,84 @@
+name: Site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+      - name: Check website and deployment guards
+        run: |
+          node --test tests/site.test.js
+          python3 scripts/check_site.py
+          python3 -m unittest discover -s tests
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.17.0
+          terraform_wrapper: false
+      - name: Validate infrastructure without AWS credentials
+        run: |
+          export TF_PLUGIN_CACHE_DIR="$RUNNER_TEMP/terraform-provider-cache"
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          terraform fmt -check -recursive
+          terraform -chdir=bootstrap init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=bootstrap validate
+          terraform -chdir=infra init -backend=false -input=false -lockfile=readonly
+          terraform -chdir=infra validate
+
+  deploy:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: bivops-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      SITE_BUCKET: ${{ vars.SITE_BUCKET }}
+      DISTRIBUTION_ID: ${{ vars.DISTRIBUTION_ID }}
+      SUBSCRIPTION_ARN: ${{ vars.SUBSCRIPTION_ARN }}
+      HOSTED_ZONE_ARN: ${{ vars.HOSTED_ZONE_ARN }}
+      AWS_PAGER: ""
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Install AWS CLI with pricing-plan-manager support
+        run: |
+          curl --fail --silent --show-error --location \
+            https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.37.7.zip \
+            -o "$RUNNER_TEMP/awscliv2.zip"
+          unzip -q "$RUNNER_TEMP/awscliv2.zip" -d "$RUNNER_TEMP/aws-installer"
+          "$RUNNER_TEMP/aws-installer/aws/install" \
+            --install-dir "$RUNNER_TEMP/aws-cli" --bin-dir "$RUNNER_TEMP/aws-bin"
+          echo "$RUNNER_TEMP/aws-bin" >> "$GITHUB_PATH"
+      - name: Obtain short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: bivops-${{ github.run_id }}
+      - name: Verify Free plan, upload, invalidate cache and check live site
+        run: python3 scripts/deploy.py
