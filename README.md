@@ -75,6 +75,10 @@ Run node --test tests/site.test.js, python3 scripts/check_site.py and python3 -m
 No reuse license has been selected yet. Public visibility alone is not a free-software license, and the portrait is not licensed for reuse by this package.
 
 ## Browser security
-CloudFront sets a Content Security Policy through a native response headers policy, with no additional policy usage fee. Scripts, styles and images load only from this site. Inline scripts, network API requests, form submissions and framing are blocked. External documentation links still work.
+Each HTML page declares a Content Security Policy immediately after the charset meta element, before any script or stylesheet. Scripts, styles and images load only from this site. Inline scripts, network API requests and form submissions are blocked. External documentation links still work.
 
-The policy is defined in infra/security_headers.tf and takes effect after Terraform apply. Adding a third-party script, remote image, form or API requires an explicit policy review. This policy does not protect against an attacker who can replace trusted site files.
+CloudFront uses the managed SecurityHeadersPolicy, which is supported by the Free flat-rate plan. This provides HSTS, nosniff, referrer policy and X-Frame-Options: SAMEORIGIN. Custom response headers policies require Business or Premium under flat-rate pricing, so this project does not create one.
+
+The CSP takes effect when the HTML is loaded, including local previews. A meta CSP cannot enforce frame-ancestors; cross-origin framing protection comes from the CloudFront X-Frame-Options response header after deployment. The CSP will not appear in curl -I output; inspect the HTML or browser DOM instead.
+
+Adding a third-party script, remote image, form or API requires an explicit policy review. CSP does not protect against an attacker who can replace trusted site files. The offline site check verifies the policy and its position on every page.
